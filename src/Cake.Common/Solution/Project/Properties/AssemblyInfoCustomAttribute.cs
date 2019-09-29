@@ -25,6 +25,6 @@ namespace Cake.Common.Solution.Project.Properties
         /// Gets or sets the value.
         /// </summary>
         /// <value>The value for the attribute.</value>
-        public string Value { get; set; }
+        public object Value { get; set; }
     }
 }

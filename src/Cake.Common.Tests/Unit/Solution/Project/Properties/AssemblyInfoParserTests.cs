@@ -246,6 +246,48 @@ namespace Cake.Common.Tests.Unit.Solution.Project.Properties
                 Assert.Equal("Cake.Common.Tests", result.InternalsVisibleTo.ElementAt(1));
             }
 
+            [Fact]
+            public void Should_Read_CustomAttributes()
+            {
+                // Given
+                var fixture = new AssemblyInfoParserFixture();
+                fixture.CustomAttributes = new List<AssemblyInfoCustomAttribute>
+                {
+                    new AssemblyInfoCustomAttribute { Name = "FooA", NameSpace = "SomeFoos.Attributes", Value = "A Value" },
+                    new AssemblyInfoCustomAttribute { Name = "FooB", NameSpace = "SomeFoos.Attributes", Value = true }
+                };
+
+                // When
+                var result = fixture.Parse();
+
+                var assemblyInfoFixture = new AssemblyInfoFixture();
+                assemblyInfoFixture.Settings = new AssemblyInfoSettings()
+                {
+                    CustomAttributes = result.CustomAttributes,
+                    CLSCompliant = result.ClsCompliant,
+                    Company = result.Company,
+                    ComVisible = result.ComVisible,
+                    Configuration = result.Configuration,
+                    Copyright = result.Copyright,
+                    Description = result.Description,
+                    FileVersion = result.AssemblyFileVersion,
+                    Guid = result.Guid,
+                    InformationalVersion = result.AssemblyInformationalVersion,
+                    InternalsVisibleTo = result.InternalsVisibleTo,
+                    Product = result.Product,
+                    Title = result.Title,
+                    Trademark = result.Trademark,
+                    Version = result.AssemblyVersion
+                };
+
+                var result2 = assemblyInfoFixture.CreateAndReturnContent();
+
+                // Then
+                //Assert.Equal(2, result.InternalsVisibleTo.Count);
+                //Assert.Equal("Cake.Core.Tests", result.InternalsVisibleTo.ElementAt(0));
+                //Assert.Equal("Cake.Common.Tests", result.InternalsVisibleTo.ElementAt(1));
+            }
+
             [Theory]
             [InlineData("Cake", "Cake")]
             [InlineData(null, "")]

@@ -4,7 +4,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Runtime.Serialization.Json;
+using System.Text;
 using Cake.Core;
 
 namespace Cake.Common.Solution.Project.Properties
@@ -94,11 +97,24 @@ namespace Cake.Common.Solution.Project.Properties
             }
         }
 
-        private void AddCustomAttribute(string name, string @namespace, string value)
+        private void AddCustomAttribute(string name, string @namespace, object value)
         {
             if (value != null)
             {
-                AddAttributeCore(CustomAttributes, name, @namespace, string.Concat("\"", value, "\""));
+                if (value is string)
+                {
+                    AddAttributeCore(CustomAttributes, name, @namespace, string.Concat("\"", value, "\""));
+                }
+                else
+                {
+                    var ms = new MemoryStream();
+                    var ser = new DataContractJsonSerializer(value.GetType());
+                    ser.WriteObject(ms, value);
+                    byte[] json = ms.ToArray();
+                    ms.Close();
+                    var v = Encoding.UTF8.GetString(json, 0, json.Length);
+                    AddAttributeCore(CustomAttributes, name, @namespace, v);
+                }
             }
         }
 

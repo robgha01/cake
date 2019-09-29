@@ -34,6 +34,7 @@ namespace Cake.Common.Tests.Fixtures
 
         public FilePath Path { get; set; }
         public bool CreateAssemblyInfo { get; set; }
+        public ICollection<AssemblyInfoCustomAttribute> CustomAttributes { get; set; }
 
         public AssemblyInfoParserFixture()
         {
@@ -115,6 +116,10 @@ namespace Cake.Common.Tests.Fixtures
             if (Version != null)
             {
                 settings.Version = Version;
+            }
+            if (CustomAttributes != null)
+            {
+                settings.CustomAttributes = CustomAttributes;
             }
 
             var creator = new AssemblyInfoCreator(FileSystem, Environment, Substitute.For<ICakeLog>());

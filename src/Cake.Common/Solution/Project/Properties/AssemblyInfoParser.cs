@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using Cake.Core;
 using Cake.Core.IO;
@@ -22,6 +23,7 @@ namespace Cake.Common.Solution.Project.Properties
         private const string CSharpQuotedPattern = @"^\s*\[assembly: (?:System\.Reflection\.)?{0}(?:Attribute)? ?\(""(?<attributeValue>.*)""\)";
         private const string VBNonQuotedPattern = @"^\s*\<Assembly: (?:System\.Reflection\.)?{0}(?:Attribute)? ?\((?<attributeValue>.*)\)";
         private const string VBQuotedPattern = @"^\s*\<Assembly: (?:System\.Reflection\.)?{0}(?:Attribute)? ?\(""(?<attributeValue>.*)""\)";
+        private const string CSharpCustomAttributePattern = @"^\[assembly: (?:System\.Reflection\.)?(?<attributeName>\w*)(?:Attribute)? ?\((?<attributeValue>.*)\)";
         private const string DefaultVersion = "1.0.0.0";
 
         private readonly IFileSystem _fileSystem;
@@ -97,7 +99,8 @@ namespace Cake.Common.Solution.Project.Properties
                     ParseSingle(quotedPattern, "AssemblyTitle", content),
                     ParseSingle(quotedPattern, "AssemblyTrademark", content),
                     ParseSingle(quotedPattern, "AssemblyVersion", content) ?? DefaultVersion,
-                    ParseMultiple(quotedPattern, "InternalsVisibleTo", content));
+                    ParseMultiple(quotedPattern, "InternalsVisibleTo", content),
+                    ParseCustomAttributes(content, "CLSCompliant", "AssemblyCompany", "ComVisible", "AssemblyConfiguration", "AssemblyCopyright", "AssemblyDescription", "AssemblyFileVersion", "Guid", "AssemblyInformationalVersion", "AssemblyProduct", "AssemblyTitle", "AssemblyTrademark", "AssemblyVersion", "InternalsVisibleTo"));
             }
         }
 
@@ -120,6 +123,51 @@ namespace Cake.Common.Solution.Project.Properties
                     }
                 }
             }
+        }
+
+        private IEnumerable<AssemblyInfoCustomAttribute> ParseCustomAttributes(string content, params string[] ignoreAttributeNames)
+        {
+            //var regexNonQuotedPattern = @"^\[assembly: (?:System\.Reflection\.)?{0}(?<attributeName>\w*)(?:Attribute)? ?\((?<attributeValue>.*)\)";
+            //var regexQuotedPattern = @"^\[assembly: (?:System\.Reflection\.)?{0}(?<attributeName>\w*)(?:Attribute)? ?\(""(?<attributeValue>.*)""\)";
+            //var regexPattern = @"^\[assembly: (?<attributeName>\w*)(?:Attribute)? ?\((?:(?<attributeQuotedValue>"".*"")|(?<attributeValue>.*)?)?\)";
+            // ^\[assembly: (?<attributeName>\w*)(?:Attribute)? ?\((?:""(?<attributeQuotedValue>.*)""|(?<attributeValue>.*))\)
+            var regexNonQuotedPattern = @"^\[assembly: (?<attributeName>\w*)(?:Attribute)? ?\((?<attributeValue>.*)\)";
+            var regexQuotedPattern = @"^\[assembly: (?<attributeName>\w*)(?:Attribute)? ?\(""(?<attributeValue>.*)""\)";
+
+            var ignoredAttributes = new StringBuilder();
+
+            foreach (var name in ignoreAttributeNames)
+            {
+                ignoredAttributes.AppendFormat("(?!{0})", name);
+            }
+
+            var regexNonQuoted = new Regex(string.Format(CultureInfo.InvariantCulture, regexNonQuotedPattern, ignoredAttributes.ToString()), RegexOptions.Multiline);
+            foreach (Match match in regexNonQuoted.Matches(content))
+            {
+                if (match.Groups.Count > 0)
+                {
+                    var name = match.Groups["attributeName"].Value;
+                    var value = match.Groups["attributeValue"].Value;
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        yield return new AssemblyInfoCustomAttribute { Name = name, Value = value };
+                    }
+                }
+            }
+
+            //var regexQuoted = new Regex(string.Format(CultureInfo.InvariantCulture, regexQuotedPattern, ignoredAttributes.ToString()), RegexOptions.Multiline);
+            //foreach (Match match in regexQuoted.Matches(content))
+            //{
+            //    if (match.Groups.Count > 0)
+            //    {
+            //        var name = match.Groups["attributeName"].Value;
+            //        var value = match.Groups["attributeValue"].Value;
+            //        if (!string.IsNullOrWhiteSpace(value))
+            //        {
+            //            yield return new AssemblyInfoCustomAttribute { Name = name, Value = value };
+            //        }
+            //    }
+            //}
         }
     }
 }
